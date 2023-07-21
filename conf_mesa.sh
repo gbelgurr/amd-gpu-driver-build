@@ -1,6 +1,6 @@
 #!/bin/bash
 
-prefix=${PREFIX:-/usr}
+prefix=${PREFIX:-/opt/gbelgurr-amd/mesa}
 # for general development (optimized with assertions)
 buildtype=${BUILD_TYPE:-debugoptimized}
 

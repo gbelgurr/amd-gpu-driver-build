@@ -1,6 +1,6 @@
 #!/bin/bash
 
-prefix=${PREFIX:-/usr}
+prefix=${PREFIX:-/opt/gbelgurr-amd/drm}
 
 if test x$1 = x32; then
     is64bit=disabled
