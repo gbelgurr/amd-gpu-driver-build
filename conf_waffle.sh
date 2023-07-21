@@ -2,7 +2,7 @@
 
 set -e
 
-prefix=${PREFIX:-/usr}
+prefix=${PREFIX:-/opt/gbelgurr-amd/waffle}
 buildtype=${BUILD_TYPE:-debugoptimized}
 
 rm -r build

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-prefix=${PREFIX:-/usr/local}
+prefix=${PREFIX:-/opt/gbelgurr-amd/llvm-project}
 
 if test x$1 = x32; then
     # 32-bit build
