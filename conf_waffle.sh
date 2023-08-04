@@ -5,7 +5,7 @@ set -e
 prefix=${PREFIX:-/opt/gbelgurr-amd/waffle}
 buildtype=${BUILD_TYPE:-debugoptimized}
 
-rm -r build
+rm -rf build
 mkdir build
 meson build --prefix $prefix --libdir $prefix/lib/$arch --datadir $prefix/share --buildtype $buildtype
 
