@@ -33,7 +33,7 @@ git clone git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.
 git clone https://gitlab.freedesktop.org/xorg/driver/xf86-video-amdgpu.git
 
 # Dependencies
-git clone https://github.com/marekolsak/marek-build.git
+git clone https://github.com/gbelgurr/amd-gpu-driver-build.git
 git clone https://github.com/mesonbuild/meson.git build-meson
 git clone https://github.com/intel/libva.git
 git clone https://gitlab.freedesktop.org/wayland/wayland.git
@@ -103,13 +103,13 @@ cd ..
 # Kernel
 cd linux
 sudo apt install linux-source; cp -r /usr/src/linux-source-*/debian . # to fix a compile failure on Ubuntu
-../marek-build/build_kernel.sh
+../amd-gpu-driver-build/build_kernel.sh
 cd ..
 
 # libdrm
 cd drm
-../marek-build/conf_drm.sh
-../marek-build/conf_drm.sh 32
+../amd-gpu-driver-build/conf_drm.sh
+../amd-gpu-driver-build/conf_drm.sh 32
 ninja -Cbuild
 ninja -Cbuild32
 sudo ninja -Cbuild install
@@ -118,20 +118,22 @@ cd ..
 
 # LLVM
 cd llvm-project
-sudo cp ../marek-build/etc/ld.so.conf.d/marek_llvm.conf /etc/ld.so.conf.d/
-../marek-build/conf_llvm.sh
-../marek-build/conf_llvm.sh 32
+sudo cp ../amd-gpu-driver-build/etc/ld.so.conf.d/00_amd_opt_drivers.conf /etc/ld.so.conf.d/
+../amd-gpu-driver-build/conf_llvm.sh
+../amd-gpu-driver-build/conf_llvm.sh 32
 ninja -Cbuild
 ninja -Cbuild32
 sudo ninja -Cbuild install
 sudo ninja -Cbuild32 install
+source ../amd-gpu-driver-build/etc/profile.d/00-amd-mesa-env.sh
+sudo cp ../amd-gpu-driver-build/etc/profile.d/00-amd-mesa-env.sh /etc/profile.d/
 sudo ldconfig
 cd ..
 
 # Mesa
 cd mesa
-../marek-build/conf_mesa.sh
-../marek-build/conf_mesa.sh 32
+../amd-gpu-driver-build/conf_mesa.sh
+../amd-gpu-driver-build/conf_mesa.sh 32
 ninja -Cbuild
 ninja -Cbuild32
 sudo ninja -Cbuild install
@@ -139,8 +141,11 @@ sudo ninja -Cbuild32 install
 sudo ldconfig
 cd ..
 
+# set in /etc/environment, LIBGL_DRIVERS_PATH="/opt/gbelgurr-amd/mesa/lib/x86_64-linux-gnu/dri:/opt/gbelgurr-amd/mesa/lib/i386-linux-gnu/dri"
+# and RESTART
+
 # Install the latest 64-bit and 32-bit glxgears and glxinfo (this uses the demos repository)
-sudo marek-build/make-install_glx-utils-32.sh
+sudo amd-gpu-driver-build/make-install_glx-utils-32.sh
 
 # xf86-video-amdgpu (usually not needed)
 cd xf86-video-amdgpu
@@ -161,20 +166,20 @@ For GLCTS, you need a Khronos account and you need to upload your ssh public key
 ```bash
 # Waffle
 cd waffle
-../marek-build/conf_waffle.sh
+../amd-gpu-driver-build/conf_waffle.sh
 ninja -Cbuild
 sudo ninja -Cbuild install
 cd ..
 
 # piglit
 cd piglit
-../marek-build/conf_piglit.sh
+../amd-gpu-driver-build/conf_piglit.sh
 ninja
 cd ..
 
 # glcts
 cd glcts
-../marek-build/conf_glcts.sh
+../amd-gpu-driver-build/conf_glcts.sh
 ninja -Cbuild
 ninja -Cbuild_es
 cd ..
@@ -200,7 +205,7 @@ Mesa development and testing without subsequent installation
 After you run `ninja install` for Mesa, you don't have to install it every time you rebuild it if you add symlinks from `/usr/lib` into your build directory. Then, you just build Mesa and the next started app will use it. There is a script that creates the symlinks:
 
 ```bash
-marek-build/make-mesa-symlinks.sh
+amd-gpu-driver-build/make-mesa-symlinks.sh
 ```
 
 If your Linux distribution updates packages and overwrites your symlinks, just re-run the script.
