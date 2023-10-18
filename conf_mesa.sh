@@ -41,4 +41,5 @@ set -e
 
 meson setup build$1 --prefix $prefix --libdir $prefix/lib/$arch --buildtype $buildtype -Dglvnd=enabled \
 	--native-file `dirname $0`/llvm_config_$arch.cfg -Dc_args="$profile" -Dcpp_args="$profile" \
-        -Dgallium-drivers=$gallium_drivers -Dvulkan-drivers=$vulkandrv $mm $others $repl
+        -Dgallium-drivers=$gallium_drivers -Dvulkan-drivers=$vulkandrv -Dgallium-rusticl=true \
+	-Dllvm=enabled -Drust_std=2021 $mm $others $repl
