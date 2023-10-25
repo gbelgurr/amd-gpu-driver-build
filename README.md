@@ -6,7 +6,13 @@ These instructions have only been tested on Ubuntu 20.04.
 You are going to need the following packages:
 
 ```bash
-sudo apt install git make gcc flex bison libncurses-dev libssl-dev libelf-dev libelf-dev:i386 libzstd-dev libzstd-dev:i386 zstd python3-setuptools libpciaccess-dev libpciaccess-dev:i386 ninja-build libcairo2-dev libcairo2-dev:i386 gcc-multilib cmake-curses-gui g++ g++-multilib ccache libudev-dev libudev-dev:i386 libglvnd-dev libglvnd-dev:i386 libxml2-dev libxml2-dev:i386 graphviz doxygen xsltproc xmlto xorg-dev libxcb-glx0-dev libxcb-glx0-dev:i386 libx11-xcb-dev libx11-xcb-dev:i386 libxcb-dri2-0-dev libxcb-dri2-0-dev:i386 libxcb-dri3-dev libxcb-dri3-dev:i386 libxcb-present-dev libxcb-present-dev:i386 libxshmfence-dev libxshmfence-dev:i386 libxfixes-dev:i386 libxxf86vm-dev:i386 libxkbcommon-dev libvulkan-dev spirv-tools glslang-tools python3-numpy libcaca-dev python3-lxml autoconf libtool automake xutils-dev libva-dev libvdpau-dev wayland-protocols libwayland-egl-backend-dev python3-mako libxrandr-dev:i386 libwayland-dev:i386 libwayland-egl-backend-dev:i386 libsensors-dev libsensors-dev:i386 libunwind-dev libunwind-dev:i386 valgrind libxcb-keysyms1-dev libxcb-keysyms1-dev:i386 curl
+sudo apt install git make gcc flex bison libncurses-dev libssl-dev libelf-dev libelf-dev:i386 libzstd-dev libzstd-dev:i386 zstd python3-setuptools libpciaccess-dev libpciaccess-dev:i386 ninja-build libcairo2-dev libcairo2-dev:i386 gcc-multilib cmake-curses-gui g++ g++-multilib ccache libudev-dev libudev-dev:i386 libglvnd-dev libglvnd-dev:i386 libxml2-dev libxml2-dev:i386 graphviz doxygen xsltproc xmlto xorg-dev libxcb-glx0-dev libxcb-glx0-dev:i386 libx11-xcb-dev libx11-xcb-dev:i386 libxcb-dri2-0-dev libxcb-dri2-0-dev:i386 libxcb-dri3-dev libxcb-dri3-dev:i386 libxcb-present-dev libxcb-present-dev:i386 libxshmfence-dev libxshmfence-dev:i386 libxfixes-dev:i386 libxxf86vm-dev:i386 libxkbcommon-dev libvulkan-dev spirv-tools glslang-tools python3-numpy libcaca-dev python3-lxml autoconf libtool automake xutils-dev libva-dev libvdpau-dev wayland-protocols libwayland-egl-backend-dev python3-mako libxrandr-dev:i386 libwayland-dev:i386 libwayland-egl-backend-dev:i386 libsensors-dev libsensors-dev:i386 libunwind-dev libunwind-dev:i386 valgrind libxcb-keysyms1-dev libxcb-keysyms1-dev:i386 curl clang
+```
+
+Install Rust:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
 Put `/usr/lib/ccache:` at the beginning of PATH in `/etc/environment`.
@@ -42,7 +48,12 @@ git clone https://gitlab.freedesktop.org/wayland/wayland-protocols.git
 # For the driver:
 git clone https://gitlab.freedesktop.org/agd5f/linux.git -b amd-staging-drm-next # Ideally use the AMD internal repository instead
 git clone https://gitlab.freedesktop.org/mesa/drm.git
+
 git clone https://github.com/llvm/llvm-project.git
+cd ./llvm-project/llvm/projects
+git clone https://github.com/KhronosGroup/SPIRV-LLVM-Translator.git
+cd -
+
 git clone https://gitlab.freedesktop.org/mesa/mesa.git
 git clone https://gitlab.freedesktop.org/mesa/demos.git # just for glxinfo and glxgears
 
@@ -57,7 +68,8 @@ git clone https://github.com/KhronosGroup/VK-GL-CTS.git glcts
 - firmware (just copy the firmware files to /lib/firmware/amdgpu/)
 - kernel (depends on firmware)
 - libdrm
-- llvm
+- bindgen
+- llvm (with spirv-llvm-translator and libclc)
 - mesa (depends on libdrm and llvm)
 - xf86-video-amdgpu (depends on libdrm and mesa)
 
@@ -72,6 +84,7 @@ Building the driver
 
 Notes:
 - If you get Mesa build failures due to LLVM, go back to llvm-project, check out the latest release/* branch in git, and repeat all step for LLVM. Then repeat all steps for Mesa.
+- LLVM, SPIRV-LLVM-Translator and libclc need to be of the same version. After cloning llvm-project, use the libclc present within. Do not install llvm and libclc from different commits.
 
 ```bash
 
@@ -116,6 +129,10 @@ sudo ninja -Cbuild install
 sudo ninja -Cbuild32 install
 cd ..
 
+# bindgen
+# TODO: Write instruction to build bindgen from source instead of using pre-built binaries, especially since 32 bit builds aren't readily available
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/rust-lang/rust-bindgen/releases/download/v0.69.4/bindgen-cli-installer.sh | sh
+
 # LLVM
 cd llvm-project
 sudo cp ../amd-gpu-driver-build/etc/ld.so.conf.d/00_amd_opt_drivers.conf /etc/ld.so.conf.d/
@@ -128,9 +145,19 @@ sudo ninja -Cbuild32 install
 source ../amd-gpu-driver-build/etc/profile.d/00-amd-mesa-env.sh
 sudo cp ../amd-gpu-driver-build/etc/profile.d/00-amd-mesa-env.sh /etc/profile.d/
 sudo ldconfig
+
+# libclc
+export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/opt/gbelgurr-amd/llvm-project/llvm/lib/pkgconfig:/opt/gbelgurr-amd/llvm-project/llvm-i386/lib/pkgconfig"
+../amd-gpu-driver-build/conf_libclc.sh
+../amd-gpu-driver-build/conf_libclc.sh 32
+ninja -Cbuildclc
+ninja -Cbuildclc32
+sudo ninja -Cbuildclc install
+sudo ninja -Cbuildclc32 install
 cd ..
 
 # Mesa
+# TODO: Requires 32 bit bindgen, 32 bit mesa build fails currently
 cd mesa
 ../amd-gpu-driver-build/conf_mesa.sh
 ../amd-gpu-driver-build/conf_mesa.sh 32
